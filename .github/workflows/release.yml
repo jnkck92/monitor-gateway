@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+
+  build:
+    name: Build Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6.0.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Set version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Build
+        run: ./mvnw -B package -DskipTests
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: release-jar
+          path: target/monitor-gateway-*.jar
+          retention-days: 3
+
+  docker:
+    name: Docker Push
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Set version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Download JAR
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: release-jar
+          path: target/
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4.3.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.3.0
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ env.VERSION }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  github-release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Download JAR
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: release-jar
+          path: target/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3.0.3
+        with:
+          generate_release_notes: true
+          files: target/monitor-gateway-*.jar

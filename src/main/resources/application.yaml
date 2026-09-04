@@ -1,0 +1,24 @@
+server:
+  port: 8082
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 5s
+          routes:
+            - id: backend
+              uri: http://backend:8080
+              predicates:
+                - Path=/api/v1/monitor/**
+                - Method=GET
+                
+filter:
+  allowed-paths:
+    - status
+  slug:
+    valid: "^[a-f0-9]{64}$"
+    pattern: "^/api/v1/monitor/([^/]+)/(.*)$"

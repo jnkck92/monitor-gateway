@@ -1,0 +1,15 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: backend
+              uri: http://localhost:8080
+              predicates:
+                - Path=/api/v1/monitor/**
+
+dashboard:
+  tenants:
+    "5aa96fb4611b165d49175337e9c77c0d89a346d4d2e90da03f189140141b1352": "feuerwehr-test-1"
+    "fa08071461c44edf62ab8f519f7752979f50fe235ccc06a7ddf69c683d8d6399": "feuerwehr-test-2"
