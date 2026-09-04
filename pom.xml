@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>de.jkueck</groupId>
-    <artifactId>edge-gateway</artifactId>
-    <version>1.3.0</version>
-    <name>edge-gateway</name>
-    <description>edge-gateway</description>
+    <artifactId>monitor-gateway</artifactId>
+    <version>1.4.0-SNAPSHOT</version>
+    <name>monitor-gateway</name>
+    <description>monitor-gateway</description>
     <url/>
     <licenses>
         <license/>
