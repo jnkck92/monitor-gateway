@@ -4,15 +4,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 
 @Slf4j
@@ -28,14 +29,17 @@ public class GatewayErrorHandler implements WebExceptionHandler {
             return Mono.error(ex);
         }
 
-        boolean backendUnreachable = ex instanceof IOException || ex instanceof TimeoutException;
+        HttpStatusCode status;
 
-        HttpStatus status = backendUnreachable ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.INTERNAL_SERVER_ERROR;
-
-        if (backendUnreachable) {
-            log.warn("backend not reachable: {}", ex.toString());
+        if (ex instanceof ResponseStatusException rse) {
+            status = rse.getStatusCode();
+            log.warn("Unhandled route/resource error: path={} status={}", exchange.getRequest().getURI().getPath(), status);
+        } else if (ex instanceof IOException || ex instanceof TimeoutException) {
+            status = HttpStatus.SERVICE_UNAVAILABLE;
+            log.warn("Backend nicht erreichbar: {}", ex.toString());
         } else {
-            log.error("unexpected gateway error", ex);
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+            log.error("Unerwarteter Gateway-Fehler", ex);
         }
 
         response.setStatusCode(status);

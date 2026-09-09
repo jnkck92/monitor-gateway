@@ -22,3 +22,6 @@ filter:
   slug:
     valid: "^[a-f0-9]{64}$"
     pattern: "^/api/v1/monitor/([^/]+)/(.*)$"
+  vehicle:
+    param-name: "vehicle"
+    pattern: "^[A-Za-z0-9_-]{1,32}$"

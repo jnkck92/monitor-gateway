@@ -15,6 +15,8 @@ public class FilterProperties {
 
     private Slug slug = new Slug();
 
+    private Vehicle vehicle = new Vehicle();
+
     @Getter
     @Setter
     public static class Slug {
@@ -22,6 +24,16 @@ public class FilterProperties {
         private String valid;
 
         private String pattern;
+
+    }
+
+    @Getter
+    @Setter
+    public static class Vehicle {
+
+        private String paramName = "vehicle";
+
+        private String pattern = "^[A-Za-z0-9_-]{1,32}$";
 
     }
 
