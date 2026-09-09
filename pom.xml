@@ -10,7 +10,7 @@
     </parent>
     <groupId>de.jkueck</groupId>
     <artifactId>monitor-gateway</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
     <name>monitor-gateway</name>
     <description>monitor-gateway</description>
     <url/>
