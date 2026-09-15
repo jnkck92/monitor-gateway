@@ -6,6 +6,8 @@ spring:
     gateway:
       server:
         webflux:
+          metrics:
+            enabled: true
           httpclient:
             connect-timeout: 2000
             response-timeout: 5s
@@ -15,7 +17,23 @@ spring:
               predicates:
                 - Path=/api/v1/monitor/**
                 - Method=GET
-                
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: monitor-backend
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 filter:
   allowed-paths:
     - status
