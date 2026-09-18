@@ -20,6 +20,7 @@ import java.util.Optional;
 public class ValidationFilter implements GlobalFilter, Ordered {
 
     private final MonitorPathParser pathParser;
+    private final ApiPathParser apiPathParser;
 
     private final SlugFormatValidator slugFormatValidator;
 
@@ -30,19 +31,30 @@ public class ValidationFilter implements GlobalFilter, Ordered {
     private final VehicleParameterExtractor vehicleParameterExtractor;
 
     private final MonitorRequestRewriter requestRewriter;
+    private final ApiRequestRewriter apiRequestRewriter;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
         String path = exchange.getRequest().getURI().getPath();
 
-        Optional<MonitorPathMatch> match = pathParser.parse(path);
-        if (match.isEmpty()) {
-            return reject(exchange, HttpStatus.UNAUTHORIZED);
+        Optional<MonitorPathMatch> monitorMatch = pathParser.parse(path);
+        if (monitorMatch.isPresent()) {
+            return handleMonitor(exchange, chain, monitorMatch.get());
         }
 
-        String slug = match.get().slug();
-        String rest = match.get().restPath();
+        Optional<MonitorPathMatch> apiMatch = apiPathParser.parse(path);
+        if (apiMatch.isPresent()) {
+            return handleApi(exchange, chain, apiMatch.get());
+        }
+
+        return reject(exchange, HttpStatus.UNAUTHORIZED);
+    }
+
+    private Mono<Void> handleMonitor(ServerWebExchange exchange, GatewayFilterChain chain, MonitorPathMatch match) {
+
+        String slug = match.slug();
+        String rest = match.restPath();
 
         if (!slugFormatValidator.isValid(slug)) {
             return reject(exchange, HttpStatus.BAD_REQUEST);
@@ -75,6 +87,34 @@ public class ValidationFilter implements GlobalFilter, Ordered {
 
         ServerHttpRequest mutatedRequest = requestRewriter.rewrite(
                 exchange.getRequest(), rest, tenant, vehicleResult.asOptional());
+
+        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+    }
+
+    private Mono<Void> handleApi(ServerWebExchange exchange, GatewayFilterChain chain, MonitorPathMatch match) {
+
+        String slug = match.slug();
+        String resource = match.restPath();
+
+        if (!slugFormatValidator.isValid(slug)) {
+            return reject(exchange, HttpStatus.BAD_REQUEST);
+        }
+
+        Optional<String> tenantOpt = tenantResolver.resolve(slug);
+        if (tenantOpt.isEmpty()) {
+            log.warn("Invalid slug attempt: ip={}", exchange.getRequest().getRemoteAddress());
+            return reject(exchange, HttpStatus.UNAUTHORIZED);
+        }
+        String tenant = tenantOpt.get();
+
+        log.info("Request: tenant={} path={} ip={}", tenant, resource, exchange.getRequest().getRemoteAddress());
+
+        if (!pathAuthorizationService.isAllowed(resource)) {
+            log.warn("Blocked path attempt: tenant={} path={}", tenant, resource);
+            return reject(exchange, HttpStatus.FORBIDDEN);
+        }
+
+        ServerHttpRequest mutatedRequest = apiRequestRewriter.rewrite(exchange.getRequest(), resource, tenant);
 
         return chain.filter(exchange.mutate().request(mutatedRequest).build());
     }

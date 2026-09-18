@@ -8,6 +8,14 @@ spring:
               uri: http://localhost:8080
               predicates:
                 - Path=/api/v1/monitor/**
+            - id: news
+              uri: http://localhost:8080
+              predicates:
+                - Path=/api/v1/{slug}/news
+            - id: events
+              uri: http://localhost:8080
+              predicates:
+                - Path=/api/v1/{slug}/events
 
 dashboard:
   tenants:

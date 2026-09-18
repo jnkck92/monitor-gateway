@@ -25,6 +25,8 @@ public class FilterProperties {
 
         private String pattern;
 
+        private String apiPattern;
+
     }
 
     @Getter

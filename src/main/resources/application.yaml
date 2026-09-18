@@ -19,6 +19,14 @@ spring:
               predicates:
                 - Path=/api/v1/monitor/**
                 - Method=GET
+            - id: news
+              uri: http://backend:8080
+              predicates:
+                - Path=/api/v1/{slug}/news
+            - id: events
+              uri: http://backend:8080
+              predicates:
+                - Path=/api/v1/{slug}/events
 
 management:
   endpoints:
@@ -39,9 +47,12 @@ management:
 filter:
   allowed-paths:
     - status
+    - news
+    - events
   slug:
     valid: "^[a-f0-9]{64}$"
     pattern: "^/api/v1/monitor/([^/]+)/(.*)$"
+    api-pattern: "^/api/v1/([^/]+)/(news|events)$"
   vehicle:
     param-name: "vehicle"
     pattern: "^[A-Za-z0-9_-]{1,32}$"
