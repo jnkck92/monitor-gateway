@@ -20,6 +20,7 @@ public class SecurityHeaderFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE; // früh setzen, gilt für alle Antworten
+        return Ordered.HIGHEST_PRECEDENCE;
     }
+
 }
